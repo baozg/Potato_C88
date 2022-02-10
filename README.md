@@ -98,6 +98,9 @@ hifiasm -t 64 -o C88 -5 C88.hifiasm.binutg.reads.list --n-hap 4 --hom-cov 120 C8
 
 `Juicer` pipeline 
 
+### Annotation
+Please follow the https://github.com/baozg/assembly-annotation-pipeline for repeat annotation and gene prediction.
+
 
 ## Contact
 
