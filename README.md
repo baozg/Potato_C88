@@ -57,6 +57,10 @@ java -cp ~/software/LepMap3/bin SeparateChromosomes2 data=data_filter.call sizeL
 perl script/group2LG.pl data_filter.call map15.nofilt.txt > groups.txt
 python script/split_LG.py groups.txt ../../C88.filter.readnum C88.48LG.out
 
+## cor for unplaced haplotig marker
+
+
+
 
 # diplotigs
 
