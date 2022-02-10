@@ -3,52 +3,73 @@
 By leveraging the state-of-the-art sequencing technologies and polyploid graph binning, we achieved a chromosome-scale, haplotype-resolved genome assembly of a cultivated potato, Cooperation-88 (C88).
 
 
-## Pipeline overview
+## Pipeline overview ⚙️
 - Hifiasm preliminary assembly
 - Classification of utg
 - Haplotype-aware genetic phasing
 - Polyploidy graph binning of hifiasm
 - HiC scaffolding and remove artifact
 
-## Running
-
-Using the snakemake for whole pipeline from preliminary assembly and HiC scaffolding
-
-```bash
-snakemake -s Snakefile --cores 64
-```
-
 ## Step by step
 
-
-### Hifiasm preliminary assembly
+### Step1 Hifiasm preliminary assembly
 ```bash
-hifiasm --
+hifiasm -t 64 -o C88 -l 0 --primary C88.HiFi.fa.gz
+gfatools gfa2fa C88.p_utg.gfa > C88.p_utg.fa
 ```
 ### Step2 Remapping HiFi reads to utg for classification
 Based on the coverage of 50kb window, divided the window into five utg type (haplotigs,diplotigs,triplotigs,tetraplotigs and repeat region).
 ```bash
-minimap2 -ax map-hifi
-samtools index -@ 12 
-mosdepth 
+minimap2 -ax map-hifi C88.p_utg.fa C88.HiFi.fa.gz -t 64|samtools view -@ 64 -Sb -|samtools sort -o C88.hifi.sorted.bam -@ 32 -
+samtools index -@ 32 C88.hifi.sorted.bam
+mosdepth -t 12 -b 50000 -Q 1 -F 3840 C88_50kb C88.hifi.sorted.bam
+perl script/class_utg.pl C88_50kb.regions.bed.gz 30
 ```
 ### Step3 Mapping S1 population reads to utg
 ```bash
-bwa
+for s in `cat samples.list`;
+do bwa mem -M -R & samtools view -q 1 -F 3840 {input.bam}|python ../code/04.Genetic_grouping/02_reads_num_window.py ref/C88_50kb.windows.id {output.readnum} 1
 ```
 
 
 ### Step4 Haplotype-aware Genetic Mapping
-Since HiC phasing cannot work in the collapsed region, we use genetic grouping for phasing like the diploid potato.
-
+Since HiC phasing cannot work in the collapsed region, we use genetic grouping for phasing.
 ```bash
+
+# haplotigs or repeat (same as diploid, 012 score)
+## readnum to score
+
+p="haplotig"
+Rscript script/04_peaks_x_y_hist_win.R $p.readnum.flt.matrix $p.peaks_xy.txt
+python script/05_contig_yes_or_no.py $p.peaks_xy.txt $p.readnum.flt.matrix  $p.012_score $p.012.yes_no
+awk  -F '\t' '/no/ {for (i=2;i<=NF;i++) printf $i"\t"; printf "\n"}'  $p.012.yes_no > 012_failed.yesno
+python script/06_segregation_distortion_marker_yes_or_no.py 012_failed.yesno $p.readnum.flt.matrix  $p.01.score  $p.01.score.yesno
+cat $p.012_score  $p.01.score >  $p.score
+
+## LepMap3 (12 chromosomes)
+perl script/genotype2vcf.pl $p.score vcf.header > C88.vcf
+java -cp ~/software/LepMap3/bin ParentCall2 removeNonInformative=0 ignoreParentOrder=1 vcfFile=C88.vcf data=ped.txt > data.call
+java -cp ~/software/LepMap3/bin Filtering2 data=./data.call MAFLimit=0.05 missingLimit=0.4 dataTolerance=0.0000001 removeNonInformative=1 > data_filter.callq
+java -cp ~/software/LepMap3/bin SeparateChromosomes2 data=data_filter.call sizeLimit=100 numThreads=64 lodLimit=15 distortionLod=1 >map15.nofilt.txt
+
+## 12 chromsomes to 48 haplotypes
+
+perl script/group2LG.pl data_filter.call map15.nofilt.txt > groups.txt
+python script/split_LG.py groups.txt ../../C88.filter.readnum C88.48LG.out
+
+
+# diplotigs
+
+# triplotigs ()
+
+# combine
 
 ```
 
 ### Step5 Utg phasing to reads
 hifiasm gfa keep the non-contained reads record for each utg, we linked the utg phasing to the reads phasing to reduce the mapping bias.
 ```bash
-
+perl script/reformat.pl utg.group.xls gfa > C88.hifiasm.binutg.reads.list
 ```
 
 ### Step6 Polyploidy graph binning of hifiasm
@@ -70,3 +91,7 @@ hifiasm -t 64 -o C88 -5 C88.hifiasm.binutg.reads.list --n-hap 4 --hom-cov 120 C8
 | LG1_1 | m64053_200110_120759/100534820/ccs |
 
 ### Step7 HiC scaffolding and remove artifact
+
+`Juicer` pipeline 
+
+
