@@ -27,18 +27,31 @@ perl script/class_utg.pl C88_50kb.regions.bed.gz 30
 ```
 ### Step3 Mapping S1 population reads to utg
 ```bash
-for s in `cat samples.list`;
-do bwa mem -M -R & samtools view -q 1 -F 3840 {input.bam}|python ../code/04.Genetic_grouping/02_reads_num_window.py ref/C88_50kb.windows.id {output.readnum} 1
-```
+ln -s C88.p_utg.fa ref/C88.fa
+bwa index ref/C88.fa
+samtools faidx ref/C88.fa
+cut -f1,2 ref/C88.fa > ref/C88.genome.size
+python script/01_scaf_2_window.py C88.genome.size 50000 C88_50kb.windows.id
 
+for s in `cat samples.list`;
+do 
+  bwa mem -M -R "@RG\tID:${s}\tSM:${s}\tPL:ILLUMINA" -t 8 ref/C88.fa {input.gz1} {input.gz2}| samtools view -@ 8 -Sb - | amtools sort -@ {threads} -o {output.bam} - 
+  samtools view -q 1 -F 3840 {input.bam}|python script/02_reads_num_window.py ref/C88_50kb.windows.id {output.readnum} 1 > 01.readnum/${s}.readnum
+done
+
+perl script/merge_all_samples_readnum.pl samples.list marker.bed ref/C88_50kb.windows.id ./01.readnum
+```
 
 ### Step4 Haplotype-aware Genetic Mapping
 Since HiC phasing cannot work in the collapsed region, we use genetic grouping for phasing.
 ```bash
 
+mkdir haplotig diplotig triplotig
+
 # haplotigs or repeat (same as diploid, 012 score)
 ## readnum to score
 
+cd haplotig
 p="haplotig"
 Rscript script/04_peaks_x_y_hist_win.R $p.readnum.flt.matrix $p.peaks_xy.txt
 python script/05_contig_yes_or_no.py $p.peaks_xy.txt $p.readnum.flt.matrix  $p.012_score $p.012.yes_no
@@ -63,6 +76,9 @@ python script/split_LG.py groups.txt ../../C88.filter.readnum C88.48LG.out
 
 
 # diplotigs
+cd dioplotig
+
+
 
 # triplotigs ()
 
