@@ -23,7 +23,7 @@ Based on the coverage of 50kb window, divided the window into five utg type (hap
 minimap2 -ax map-hifi C88.p_utg.fa C88.HiFi.fa.gz -t 64|samtools view -@ 64 -Sb -|samtools sort -o C88.hifi.sorted.bam -@ 32 -
 samtools index -@ 32 C88.hifi.sorted.bam
 mosdepth -t 12 -b 50000 -Q 1 -F 3840 C88_50kb C88.hifi.sorted.bam
-perl script/class_utg.pl C88_50kb.regions.bed.gz 30
+perl script/class_utg.pl C88_50kb.regions.bed.gz 30 > result/03.genotype/mosdepth.bed
 ```
 ### Step3 Mapping S1 population reads to utg
 ```bash
@@ -39,14 +39,24 @@ do
   samtools view -q 1 -F 3840 {input.bam}|python script/02_reads_num_window.py ref/C88_50kb.windows.id {output.readnum} 1 > 01.readnum/${s}.readnum
 done
 
-perl script/merge_all_samples_readnum.pl samples.list marker.bed ref/C88_50kb.windows.id ./01.readnum
+perl script/merge_all_samples_readnum.pl samples.list result/01.mapping/mosdepth.bed ref/C88_50kb.windows.id ./result/02.readnum > result/03.genotype/C88.readnum
+
+# filter by missing rate 
+python script/03_contig_filter.py result/03.genotype/C88.readnum result/03.genotype/C88.readnum.flt.matrix
 ```
 
 ### Step4 Haplotype-aware Genetic Mapping
 Since HiC phasing cannot work in the collapsed region, we use genetic grouping for phasing.
+
 ```bash
 
-mkdir haplotig diplotig triplotig
+mkdir -p haplotig diplotig triplotig
+
+grep -P "_haplotig" result/03.genotype/C88.readnum.flt.matrix > result/03.genotype/haplotig/haplotig.readnum.flt.matrix
+grep -P "_diplotig" result/03.genotype/C88.readnum.flt.matrix > result/03.genotype/diplotig/diplotig.readnum.flt.matrix
+grep -P "_triplotig" result/03.genotype/C88.readnum.flt.matrix > result/03.genotype/triplotig/triplotig.readnum.flt.matrix
+
+
 
 # haplotigs or repeat (same as diploid, 012 score)
 ## readnum to score
@@ -57,7 +67,7 @@ Rscript script/04_peaks_x_y_hist_win.R $p.readnum.flt.matrix $p.peaks_xy.txt
 python script/05_contig_yes_or_no.py $p.peaks_xy.txt $p.readnum.flt.matrix  $p.012_score $p.012.yes_no
 awk  -F '\t' '/no/ {for (i=2;i<=NF;i++) printf $i"\t"; printf "\n"}'  $p.012.yes_no > 012_failed.yesno
 python script/06_segregation_distortion_marker_yes_or_no.py 012_failed.yesno $p.readnum.flt.matrix  $p.01.score  $p.01.score.yesno
-cat $p.012_score  $p.01.score >  $p.score
+cat $p.012_score $p.01.score >  $p.score
 
 ## LepMap3 (12 chromosomes)
 perl script/genotype2vcf.pl $p.score vcf.header > C88.vcf
@@ -80,7 +90,7 @@ cd dioplotig
 
 
 
-# triplotigs ()
+# triplotigs
 
 # combine
 
@@ -120,5 +130,5 @@ Please follow the https://github.com/baozg/assembly-annotation-pipeline for repe
 
 ## Contact
 
-zhigui.bao at gmail.com
+Zhigui Bao (zhigui.bao@gmail.com)
 
