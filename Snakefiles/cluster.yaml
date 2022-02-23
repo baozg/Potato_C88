@@ -1,0 +1,7 @@
+__default__:
+  queue: low
+  nCPUs: 4
+  memory: 8
+  name: "{rule}.{wildcards}.JOBNAME"
+  output: "logs/cluster/{rule}.{wildcards}.out"
+  error: "logs/cluster/{rule}.{wildcards}.err"
