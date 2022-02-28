@@ -61,7 +61,7 @@ grep -P "_triplotig" result/03.genotype/C88.readnum.flt.matrix > result/03.genot
 # haplotigs or repeat (same as diploid, 012 score)
 ## readnum to score
 
-cd haplotig
+cd result/03.genotype/haplotig/
 p="haplotig"
 Rscript script/04_peaks_x_y_hist_win.R $p.readnum.flt.matrix $p.peaks_xy.txt
 python script/05_contig_yes_or_no.py $p.peaks_xy.txt $p.readnum.flt.matrix  $p.012_score $p.012.yes_no
@@ -81,16 +81,52 @@ perl script/group2LG.pl data_filter.call map15.nofilt.txt > groups.txt
 python script/split_LG.py groups.txt ../../C88.filter.readnum C88.48LG.out
 
 ## cor for unplaced haplotig marker
+python script/10_query_reference_marker_set.py  $p.readnum.flt.matrix $p.48LG.out target.readnum  query.readnum
 
+### Need WGCNA R package for faster cor 
+Rscript script/03_target_query_correlation.R query.readnum target.readnum readnum.correlation.out
 
+python script/11_show_strongest_second_correlation.py  query.readnum target.group readnum.correlation.out query.readnum_strongest_cor.xls
+awk '$3>=0.7  {if ($4==$7) print $1"\t"$2"\t"$5"\t"$4; else if ($4==$10) print $1"\t"$2"\t"$8"\t"$4; else if ($7==$10) print $1"\t"$5"\t"$8"\t"$7 }' ./query.readnum_strongest_cor.xls  >good.cor.marker
 
 
 # diplotigs
-cd dioplotig
+cd result/03.genotype/diplotig/
 
+## fitPoly genotype
+perl script/readnum2fitPoly.pl diplotig.readnum.flt.matrix > diplotig.fitPoly.input.tsv
+pigz -p 12 diplotig.fitPoly.input.tsv
+Rscript script/fitPoly.R diplotig
+perl script/fitPoly2genotype.pl diplotig_scores.dat diplotig_models.dat 4 > diplotig.filter.genotype
+
+## find the collapsed
+python script/cor_diplotig.py --target result/03.genotype/haplotig/haplotig.readnum.flt.matrix --tsv C88.48LG.out --query diplotig.filter.genotype > diplotig.48LG.tsv
+
+## unplaced diplotig marker
+python script/10_query_reference_marker_set.py  $p.readnum.flt.matrix $p.48LG.out target.readnum query.readnum
+Rscript script/03_target_query_correlation.R  query.readnum target.readnum readnum.correlation.out
+python script/11_show_strongest_second_correlation.py  query.readnum target.group readnum.correlation.out query.readnum_strongest_cor.xls
+awk '$3>=0.7  {if ($4==$7) print $1"\t"$2"\t"$5"\t"$4; else if ($4==$10) print $1"\t"$2"\t"$8"\t"$4; else if ($7==$10) print $1"\t"$5"\t"$8"\t"$7 }' ./query.readnum_strongest_cor.xls  >good.cor.marker
 
 
 # triplotigs
+cd result/03.genotype/triplotig
+
+p="triplotig"
+Rscript script/04_peaks_x_y_hist_win.R $p.readnum.flt.matrix $p.peaks_xy.txt
+python script/05_contig_yes_or_no.py $p.peaks_xy.txt $p.readnum.flt.matrix  $p.012_score $p.012.yes_no
+awk  -F '\t' '/no/ {for (i=2;i<=NF;i++) printf $i"\t"; printf "\n"}'  $p.012.yes_no > 012_failed.yesno
+python script/06_segregation_distortion_marker_yes_or_no.py 012_failed.yesno $p.readnum.flt.matrix  $p.01.score  $p.01.score.yesno
+cat $p.012_score $p.01.score >  $p.score
+
+# 2-geno for marker d
+perl complement.pl triplotig.score > triplotig_complement.score
+ln -s result/03.genotype/haplotig/target.readnum ./target.score
+Rscript script/11_target_query_correlation.R triplotig_complement.score target.score triple.correlation.out
+python script/11_show_strongest_second_correlation.py triplotig_complement.score C88_cor_haplotig.48LG.out triple.correlation.out query.readnum_strongest_cor.xls
+
+
+
 
 # combine
 
