@@ -139,7 +139,7 @@ perl script/reformat.pl utg.group.xls gfa > C88.hifiasm.binutg.reads.list
 ```
 
 ### Step6 Polyploidy graph binning of hifiasm
-[hifiasm-dev](https://github.com/chhylp123/hifiasm/tree/hifiasm_dev_debug) have devlopmented polypoidy graph binning. It utlized the non-contained reads information during the assembly graph build process. It can correct the phasing error and extend the phase block with overlap information. So you will have a more contiguous assembly than binning reads. It should work on more than tetraploid and HiC phasing information (ex. AllHiC pipeline)
+[hifiasm-dev](https://github.com/chhylp123/hifiasm/tree/hifiasm_dev_debug, commit b640289b19f38388dbeb9b34e78210afeac2eedc) have devlopmented polypoidy graph binning. It utlized the non-contained reads information during the assembly graph build process. It can correct the phasing error and extend the phase block with overlap information. So you will have a more contiguous assembly than binning reads. It should work on more than tetraploid and HiC phasing information (ex. AllHiC pipeline)
 
 ```bash
 hifiasm -t 64 -o C88 -5 C88.hifiasm.binutg.reads.list --n-hap 4 --hom-cov 120 C88.HiFi.fa.gz
