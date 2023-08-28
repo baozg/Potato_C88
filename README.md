@@ -30,7 +30,7 @@ perl script/class_utg.pl C88_50kb.regions.bed.gz 30 > result/03.genotype/mosdept
 ln -s C88.p_utg.fa ref/C88.fa
 bwa index ref/C88.fa
 samtools faidx ref/C88.fa
-cut -f1,2 ref/C88.fa > ref/C88.genome.size
+cut -f1,2 ref/C88.fa.fai > ref/C88.genome.size
 python script/01_scaf_2_window.py C88.genome.size 50000 C88_50kb.windows.id
 
 for s in `cat samples.list`;
