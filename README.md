@@ -91,6 +91,10 @@ awk '$3>=0.7  {if ($4==$7) print $1"\t"$2"\t"$5"\t"$4; else if ($4==$10) print $
 
 
 # diplotigs
+
+## copy target.readnum in the haplotig
+cp result/03.genotype/haplotig/target.readnum result/03.genotype/diplotig/haplotig.target.score
+
 cd result/03.genotype/diplotig/
 
 ## fitPoly genotype
@@ -100,7 +104,8 @@ Rscript script/fitPoly.R diplotig
 perl script/fitPoly2genotype.pl diplotig_scores.dat diplotig_models.dat 4 > diplotig.filter.genotype
 
 ## find the collapsed
-python script/cor_diplotig.py --target result/03.genotype/haplotig/haplotig.readnum.flt.matrix --tsv C88.48LG.out --query diplotig.filter.genotype > diplotig.48LG.tsv
+python script/cor_diplotig.py --target result/03.genotype/haplotig/target.readnum --tsv C88.48LG.out --query diplotig.filter.genotype > diplotig.48LG.tsv
+
 
 ## unplaced diplotig marker
 python script/10_query_reference_marker_set.py  $p.readnum.flt.matrix $p.48LG.out target.readnum query.readnum
