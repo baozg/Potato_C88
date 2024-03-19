@@ -42,7 +42,7 @@ done
 perl script/merge_all_samples_readnum.pl samples.list result/01.mapping/mosdepth.bed ref/C88_50kb.windows.id ./result/02.readnum > result/03.genotype/C88.readnum
 
 # filter by missing rate 
-python script/03_contig_filter.py result/03.genotype/C88.readnum result/03.genotype/C88.readnum.flt.matrix
+python script/11_contig_filter.py result/03.genotype/C88.readnum result/03.genotype/C88.readnum.flt.matrix
 ```
 
 ### Step4 Haplotype-aware Genetic Mapping
@@ -84,7 +84,7 @@ python script/split_LG.py groups.txt ../../C88.filter.readnum C88.48LG.out
 python script/10_query_reference_marker_set.py  $p.readnum.flt.matrix $p.48LG.out target.readnum  query.readnum
 
 ### Need WGCNA R package for faster cor 
-Rscript script/03_target_query_correlation.R query.readnum target.readnum readnum.correlation.out
+Rscript script/11_target_query_correlation.R query.readnum target.readnum readnum.correlation.out
 
 python script/11_show_strongest_second_correlation.py  query.readnum target.group readnum.correlation.out query.readnum_strongest_cor.xls
 awk '$3>=0.7  {if ($4==$7) print $1"\t"$2"\t"$5"\t"$4; else if ($4==$10) print $1"\t"$2"\t"$8"\t"$4; else if ($7==$10) print $1"\t"$5"\t"$8"\t"$7 }' ./query.readnum_strongest_cor.xls  >good.cor.marker
@@ -109,7 +109,7 @@ python script/cor_diplotig.py --target result/03.genotype/haplotig/target.readnu
 
 ## unplaced diplotig marker
 python script/10_query_reference_marker_set.py  $p.readnum.flt.matrix $p.48LG.out target.readnum query.readnum
-Rscript script/03_target_query_correlation.R  query.readnum target.readnum readnum.correlation.out
+Rscript script/11_target_query_correlation.R  query.readnum target.readnum readnum.correlation.out
 python script/11_show_strongest_second_correlation.py  query.readnum target.group readnum.correlation.out query.readnum_strongest_cor.xls
 awk '$3>=0.7  {if ($4==$7) print $1"\t"$2"\t"$5"\t"$4; else if ($4==$10) print $1"\t"$2"\t"$8"\t"$4; else if ($7==$10) print $1"\t"$5"\t"$8"\t"$7 }' ./query.readnum_strongest_cor.xls  >good.cor.marker
 
