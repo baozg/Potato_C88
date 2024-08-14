@@ -149,7 +149,7 @@ perl script/reformat.pl utg.group.xls gfa > C88.hifiasm.binutg.reads.list
 ```bash
 hifiasm -t 64 -o C88 -5 C88.hifiasm.binutg.reads.list --n-hap 4 --hom-cov 120 C88.HiFi.fa.gz
 ```
-`-5` represent the phase information (below), the collapsed region will use the reads more than once, `--n-hap 4` indicated the ploidy and `--hom-cov` is the homozyous peak in assembly.
+`-5` represent the phase information (below), the collapsed region will use the reads more than once, `--n-hap 4` indicated the ploidy and `--hom-cov` is the homozyous peak in assembly. LG is not required, but the haplotype group should be consistence with `_1`,`_2`,`_3` and `_4`
 
 | Group | non-contained HiFi reads           |
 |-------|------------------------------------|
